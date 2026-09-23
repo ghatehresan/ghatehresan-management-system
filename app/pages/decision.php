@@ -4,11 +4,13 @@
 if (is_post()) {
     csrf_verify();
     if (post('action') === 'threshold') {
+        auth_require_permission('change_decision');
         set_setting('stock_min_sales_90d', (string)max(1, post_int('min_sales')));
         flash('ok', 'آستانه به‌روزرسانی شد.');
         redirect(url('decision'));
     }
     if (post('action') === 'flag') {
+        auth_require_permission('change_decision');
         // ثبت وضعیت ثبات قیمت / منسوخ بودن در یادداشت کالا
         $pid = post_int('id');
         q("UPDATE products SET notes = ? WHERE id = ?", [post('notes'), $pid]);
@@ -122,7 +124,7 @@ function dec_table($rows, $title, $sub, $kind) {
           <?php foreach ($rows as $r): ?>
             <tr>
               <td>
-                <a href="<?= url('product_edit', ['id' => $r['id']]) ?>">
+                <a href="<?= url(auth_can('write_product') ? 'product_edit' : 'products', auth_can('write_product') ? ['id' => $r['id']] : []) ?>">
                   <b><?= e(str_limit($r['name'], 34)) ?></b></a>
                 <div class="tiny muted"><?= e($r['cat_name'] ?: '—') ?></div>
               </td>

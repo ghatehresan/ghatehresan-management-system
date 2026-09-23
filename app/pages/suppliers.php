@@ -3,6 +3,7 @@
 
 if (is_post() && post('action') === 'delete') {
     csrf_verify();
+    auth_require_permission('delete_supplier');
     $id = post_int('id');
     q("UPDATE products SET supplier_id=NULL WHERE supplier_id=?", [$id]);
     q("DELETE FROM suppliers WHERE id=?", [$id]);
@@ -63,14 +64,18 @@ page_head('تأمین‌کنندگان', fa_digits(count($rows)) . ' تأمین�
         </dl>
         <div class="dv"></div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
-          <a class="btn btn-sm" href="<?= url('supplier_edit', ['id' => $s['id']]) ?>">ویرایش</a>
+          <?php if (auth_can('write_supplier')): ?>
+            <a class="btn btn-sm" href="<?= url('supplier_edit', ['id' => $s['id']]) ?>">ویرایش</a>
+          <?php endif; ?>
           <a class="btn btn-sm" href="<?= url('products', ['sup' => $s['id']]) ?>">کالاهایش</a>
-          <form method="post" style="display:inline">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action" value="delete">
-            <input type="hidden" name="id" value="<?= $s['id'] ?>">
-            <button class="btn btn-sm btn-d" data-confirm="حذف شود؟ کالاهایش بدون تأمین‌کننده می‌مانند.">حذف</button>
-          </form>
+          <?php if (auth_can('delete_supplier')): ?>
+            <form method="post" style="display:inline">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="id" value="<?= $s['id'] ?>">
+              <button class="btn btn-sm btn-d" data-confirm="حذف شود؟ کالاهایش بدون تأمین‌کننده می‌مانند.">حذف</button>
+            </form>
+          <?php endif; ?>
         </div>
       </div>
     </div>

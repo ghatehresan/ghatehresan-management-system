@@ -16,6 +16,7 @@ $errors = [];
 
 if (is_post()) {
     csrf_verify();
+    auth_require_permission('write_product');
 
     $data = [
         'internal_code' => post('internal_code'),
@@ -112,7 +113,7 @@ if ($stats): ?>
     <div class="stat"><div class="lb">فروش ۹۰ روز</div><div class="vl"><?= fa_digits($stats['sold90']) ?></div></div>
     <div class="stat"><div class="lb">فروش کل</div><div class="vl"><?= fa_digits($stats['soldAll']) ?></div></div>
     <div class="stat"><div class="lb">موجودی فعلی</div><div class="vl"><?= fa_digits($stats['stock']) ?></div>
-      <div class="hint"><a href="<?= url('stock', ['pid' => $id]) ?>">کاردکس</a></div></div>
+      <?php if (auth_can_page('stock')): ?><div class="hint"><a href="<?= url('stock', ['pid' => $id]) ?>">کاردکس</a></div><?php endif; ?></div>
     <div class="stat <?= $stats['gross'] < 0 ? 'neg' : 'pos' ?>">
       <div class="lb">سود ناخالص کل</div><div class="vl sm"><?= money($stats['gross']) ?></div></div>
   </div>
@@ -222,7 +223,13 @@ if ($stats): ?>
             <?php endforeach; ?>
           </select>
           <?php if (!$sups): ?>
-            <div class="hint"><a href="<?= url('supplier_edit') ?>">ابتدا یک تأمین‌کننده ثبت کنید</a></div>
+            <div class="hint">
+              <?php if (auth_can_page('supplier_edit')): ?>
+                <a href="<?= url('supplier_edit') ?>">ابتدا یک تأمین‌کننده ثبت کنید</a>
+              <?php else: ?>
+                ابتدا مدیر عملیاتی یک تأمین‌کننده ثبت کند.
+              <?php endif; ?>
+            </div>
           <?php endif; ?>
         </div>
         <div class="fld">

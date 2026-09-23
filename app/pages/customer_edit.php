@@ -9,6 +9,7 @@ $errors = [];
 
 if (is_post()) {
     csrf_verify();
+    auth_require_permission('write_customer');
     $d = [
         'name'    => post('name'),
         'phone'   => post('phone'),

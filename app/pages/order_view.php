@@ -7,6 +7,7 @@ if (!$o) { flash('error', 'سفارش یافت نشد.'); redirect(url('orders')
 
 if (is_post() && post('action') === 'delete') {
     csrf_verify();
+    auth_require_permission('delete_order');
     $pdo = db();
     try {
         $pdo->beginTransaction();
@@ -30,8 +31,8 @@ $name  = $o['customer_name'] ?: ($cust['name'] ?? '—');
 layout_head('سفارش ' . ($o['order_no'] ?: '#' . $id));
 page_head('سفارش ' . ($o['order_no'] ?: '#' . $id), jdate($o['order_date'], 'long'),
     '<button class="btn" onclick="window.print()">چاپ</button>'
-  . '<a class="btn" href="' . url('order_edit', ['id' => $id]) . '">ویرایش</a>'
-  . '<a class="btn" href="' . url('orders') . '">بازگشت</a>');
+  . (auth_can('write_order') ? '<a class="btn" href="' . url('order_edit', ['id' => $id]) . '">ویرایش</a>' : '')
+  . '<a class="btn" href="' . url(auth_can_page('orders') ? 'orders' : 'dashboard') . '">بازگشت</a>');
 ?>
 
 <?php if ($o['is_returned']): ?>
@@ -94,7 +95,7 @@ page_head('سفارش ' . ($o['order_no'] ?: '#' . $id), jdate($o['order_date'],
         <tr>
           <td>
             <?php if ($it['product_id']): ?>
-              <a href="<?= url('product_edit', ['id' => $it['product_id']]) ?>">
+              <a href="<?= url(auth_can('write_product') ? 'product_edit' : 'products', auth_can('write_product') ? ['id' => $it['product_id']] : []) ?>">
                 <b><?= e($it['product_name']) ?></b></a>
             <?php else: ?>
               <b><?= e($it['product_name']) ?></b>
@@ -137,12 +138,16 @@ page_head('سفارش ' . ($o['order_no'] ?: '#' . $id), jdate($o['order_date'],
 </div>
 
 <div class="no-print" style="display:flex;gap:9px;flex-wrap:wrap">
-  <a class="btn btn-p" href="<?= url('order_edit', ['id' => $id]) ?>">ویرایش سفارش</a>
-  <form method="post" style="display:inline">
-    <?= csrf_field() ?>
-    <input type="hidden" name="action" value="delete">
-    <button class="btn btn-d" data-confirm="این سفارش حذف شود؟ برگشت‌پذیر نیست.">حذف سفارش</button>
-  </form>
+  <?php if (auth_can('write_order')): ?>
+    <a class="btn btn-p" href="<?= url('order_edit', ['id' => $id]) ?>">ویرایش سفارش</a>
+  <?php endif; ?>
+  <?php if (auth_can('delete_order')): ?>
+    <form method="post" style="display:inline">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="delete">
+      <button class="btn btn-d" data-confirm="این سفارش حذف شود؟ برگشت‌پذیر نیست.">حذف سفارش</button>
+    </form>
+  <?php endif; ?>
 </div>
 
 <?php layout_foot(); ?>

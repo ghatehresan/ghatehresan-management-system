@@ -6,7 +6,7 @@ $errors = [];
 
 if (is_post()) {
     csrf_verify();
-    $username = trim((string)post('username'));
+    $username = strtolower(trim((string)post('username')));
     $password = (string)($_POST['password'] ?? '');
     $user = one("SELECT id, username, name, role, active, password_hash
                    FROM users WHERE username=? AND active=1", [$username]);

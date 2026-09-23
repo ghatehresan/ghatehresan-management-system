@@ -9,6 +9,7 @@ $errors = [];
 
 if (is_post()) {
     csrf_verify();
+    auth_require_permission('write_supplier');
     $d = [
         'name'             => post('name'),
         'contact_person'   => post('contact_person'),

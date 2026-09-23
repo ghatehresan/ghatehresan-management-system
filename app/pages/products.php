@@ -4,6 +4,7 @@
 // حذف
 if (is_post() && post('action') === 'delete') {
     csrf_verify();
+    auth_require_permission('delete_product');
     $id = post_int('id');
     q("DELETE FROM product_vehicles WHERE product_id=?", [$id]);
     q("UPDATE order_items SET product_id=NULL WHERE product_id=?", [$id]);
@@ -79,7 +80,7 @@ $vehs = all("SELECT * FROM vehicles ORDER BY sort_order, name");
 
 layout_head('کاتالوگ');
 page_head('کاتالوگ کالا', fa_digits($total) . ' کالا',
-    '<a class="btn btn-p" href="' . url('product_edit') . '">+ کالای جدید</a>'
+    (auth_can('write_product') ? '<a class="btn btn-p" href="' . url('product_edit') . '">+ کالای جدید</a>' : '')
   . '<a class="btn" href="' . url('export', ['t' => 'products']) . '">خروجی CSV</a>');
 ?>
 
@@ -159,7 +160,7 @@ page_head('کاتالوگ کالا', fa_digits($total) . ' کالا',
         $total === 0 && $search === ''
           ? 'اولین کالای کاتالوگ را اضافه کنید. توصیه: از قطعات پرتکرار مثل فیلتر شروع کنید.'
           : 'فیلترها را تغییر دهید.',
-        $total === 0 ? '<a class="btn btn-p" href="' . url('product_edit') . '">+ افزودن کالا</a>' : ''
+        ($total === 0 && auth_can('write_product')) ? '<a class="btn btn-p" href="' . url('product_edit') . '">+ افزودن کالا</a>' : ''
       ); ?>
     <?php else: ?>
       <div class="tw">
@@ -179,7 +180,7 @@ page_head('کاتالوگ کالا', fa_digits($total) . ' کالا',
         ?>
           <tr>
             <td>
-              <a href="<?= url('product_edit', ['id' => $r['id']]) ?>"><b><?= e(str_limit($r['name'], 38)) ?></b></a>
+              <a href="<?= url(auth_can('write_product') ? 'product_edit' : 'products', auth_can('write_product') ? ['id' => $r['id']] : []) ?>"><b><?= e(str_limit($r['name'], 38)) ?></b></a>
               <div class="tiny muted">
                 <?php if ($r['internal_code']): ?><span class="mono"><?= e($r['internal_code']) ?></span><?php endif; ?>
                 <?php if ($r['part_number']): ?> · <span class="mono"><?= e($r['part_number']) ?></span><?php endif; ?>
@@ -221,13 +222,17 @@ page_head('کاتالوگ کالا', fa_digits($total) . ' کالا',
             </td>
             <td class="num"><?= badge($r['status'], product_status_kind($r['status'])) ?></td>
             <td class="act">
-              <a class="btn btn-sm" href="<?= url('product_edit', ['id' => $r['id']]) ?>">ویرایش</a>
-              <form method="post" style="display:inline">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                <button class="btn btn-sm btn-d" data-confirm="این کالا حذف شود؟ این کار برگشت‌پذیر نیست.">حذف</button>
-              </form>
+              <?php if (auth_can('write_product')): ?>
+                <a class="btn btn-sm" href="<?= url('product_edit', ['id' => $r['id']]) ?>">ویرایش</a>
+              <?php endif; ?>
+              <?php if (auth_can('delete_product')): ?>
+                <form method="post" style="display:inline">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                  <button class="btn btn-sm btn-d" data-confirm="این کالا حذف شود؟ این کار برگشت‌پذیر نیست.">حذف</button>
+                </form>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

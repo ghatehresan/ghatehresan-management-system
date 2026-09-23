@@ -187,6 +187,108 @@ function auth_logout(): void {
     session_destroy();
 }
 
+/** نقش‌های قابل انتخاب در سامانه */
+function user_roles(): array {
+    return [
+        'admin'     => 'مدیر کل',
+        'manager'   => 'مدیر عملیاتی',
+        'sales'     => 'فروشنده',
+        'warehouse' => 'انباردار',
+    ];
+}
+
+function role_label($role): string {
+    $roles = user_roles();
+    return $roles[$role] ?? 'نامشخص';
+}
+
+function auth_role(): string {
+    $u = auth_user();
+    return (string)($u['role'] ?? '');
+}
+
+function auth_is_admin(): bool {
+    return auth_role() === 'admin';
+}
+
+/** کنترل دسترسی صفحه، مستقل از مخفی یا نمایش دادن لینک‌ها */
+function auth_can_page(string $page): bool {
+    if (!is_authenticated()) return in_array($page, ['login', 'setup'], true);
+    if (auth_is_admin()) return true;
+
+    $roles = [
+        'dashboard'    => ['manager','sales','warehouse'],
+        'products'     => ['manager','sales','warehouse'],
+        'product_edit' => ['manager','sales'],
+        'orders'       => ['manager','sales'],
+        'order_edit'   => ['manager','sales'],
+        'order_view'   => ['manager','sales'],
+        'missed'       => ['manager','sales'],
+        'stock'        => ['manager','warehouse'],
+        'decision'     => ['manager','warehouse'],
+        'suppliers'    => ['manager','warehouse'],
+        'supplier_edit'=> ['manager','warehouse'],
+        'customers'    => ['manager','sales'],
+        'customer_edit'=> ['manager','sales'],
+        'reports'      => ['manager','sales'],
+        'export'       => ['manager','sales','warehouse'],
+        'settings'     => [],
+        'users'        => [],
+        'logout'       => ['manager','sales','warehouse'],
+    ];
+    return in_array(auth_role(), $roles[$page] ?? [], true);
+}
+
+/** کنترل دسترسی عملیات حساس در سمت سرور */
+function auth_can(string $permission): bool {
+    if (auth_is_admin()) return true;
+    $role = auth_role();
+    $permissions = [
+        'write_product'      => ['manager','sales'],
+        'delete_product'     => ['manager'],
+        'write_order'        => ['manager','sales'],
+        'change_order_status'=> ['manager','sales'],
+        'delete_order'       => ['manager'],
+        'write_customer'     => ['manager','sales'],
+        'delete_customer'    => ['manager'],
+        'write_supplier'     => ['manager','warehouse'],
+        'delete_supplier'    => ['manager'],
+        'write_missed'       => ['manager','sales'],
+        'delete_missed'      => ['manager'],
+        'write_stock'        => ['manager','warehouse'],
+        'delete_stock_move'  => ['manager','warehouse'],
+        'change_decision'    => ['manager','warehouse'],
+        'manage_users'       => [],
+        'manage_settings'    => [],
+    ];
+    return in_array($role, $permissions[$permission] ?? [], true);
+}
+
+function auth_require_permission(string $permission): void {
+    if (auth_can($permission)) return;
+    http_response_code(403);
+    exit('<div style="font-family:Tahoma;direction:rtl;padding:40px;text-align:center">'
+       . 'شما اجازهٔ انجام این عملیات را ندارید.</div>');
+}
+
+function active_admin_count(): int {
+    return (int)scalar("SELECT COUNT(*) FROM users WHERE role='admin' AND active=1");
+}
+
+function auth_can_export(string $type): bool {
+    if (auth_is_admin()) return true;
+    if (in_array($type, ['products','stock'], true)) {
+        return in_array(auth_role(), ['manager','sales','warehouse'], true);
+    }
+    if (in_array($type, ['orders','order_items','customers','missed'], true)) {
+        return in_array(auth_role(), ['manager','sales'], true);
+    }
+    if ($type === 'suppliers') {
+        return in_array(auth_role(), ['manager','warehouse'], true);
+    }
+    return false;
+}
+
 function csrf_token() {
     if (empty($_SESSION['_csrf'])) {
         $_SESSION['_csrf'] = bin2hex(random_bytes(32));

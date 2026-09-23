@@ -6,6 +6,7 @@ if (is_post()) {
     $act = post('action');
 
     if ($act === 'add') {
+        auth_require_permission('write_missed');
         $d = jalali_str_to_ymd(post('req_date')) ?: date('Y-m-d');
         if (post('part_name') === '') {
             flash('error', 'نام قطعه الزامی است.');
@@ -21,10 +22,12 @@ if (is_post()) {
         redirect(url('missed'));
     }
     if ($act === 'resolve') {
+        auth_require_permission('write_missed');
         q("UPDATE missed SET resolved = 1 - resolved WHERE id=?", [post_int('id')]);
         redirect(url('missed', array_filter(['f' => get('f')])));
     }
     if ($act === 'delete') {
+        auth_require_permission('delete_missed');
         q("DELETE FROM missed WHERE id=?", [post_int('id')]);
         flash('ok', 'حذف شد.');
         redirect(url('missed'));
@@ -205,18 +208,22 @@ page_head('دفتر نداشتیم', 'ارزشمندترین دادهٔ کسب�
                                                       : badge('باز', 'gray')) ?>
             </td>
             <td class="act">
-              <form method="post" style="display:inline">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="resolve">
-                <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                <button class="btn btn-sm"><?= $r['resolved'] ? 'بازگشت به باز' : 'رسیدگی شد' ?></button>
-              </form>
-              <form method="post" style="display:inline">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                <button class="btn btn-sm btn-d" data-confirm="حذف شود؟">×</button>
-              </form>
+              <?php if (auth_can('write_missed')): ?>
+                <form method="post" style="display:inline">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="resolve">
+                  <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                  <button class="btn btn-sm"><?= $r['resolved'] ? 'بازگشت به باز' : 'رسیدگی شد' ?></button>
+                </form>
+              <?php endif; ?>
+              <?php if (auth_can('delete_missed')): ?>
+                <form method="post" style="display:inline">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                  <button class="btn btn-sm btn-d" data-confirm="حذف شود؟">×</button>
+                </form>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

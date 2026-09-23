@@ -78,8 +78,8 @@ $maxRev = max(1, max(array_column($trend, 'rev')));
 
 layout_head('داشبورد');
 page_head('داشبورد', 'نمای کلی کسب‌وکار — ' . jdate($today, 'long'),
-    '<a class="btn btn-p" href="' . url('order_edit') . '">+ سفارش جدید</a>'
-  . '<a class="btn" href="' . url('product_edit') . '">+ کالای جدید</a>');
+    (auth_can('write_order') ? '<a class="btn btn-p" href="' . url('order_edit') . '">+ سفارش جدید</a>' : '')
+  . (auth_can('write_product') ? '<a class="btn" href="' . url('product_edit') . '">+ کالای جدید</a>' : ''));
 
 // ── هشدارهای اقدام‌پذیر ──
 $alerts = [];
@@ -199,7 +199,7 @@ foreach ($alerts as [$k, $t, $m]) {
   <div class="card mb0">
     <div class="card-h">
       <h2>سفارش‌های باز</h2>
-      <a class="btn btn-sm" href="<?= url('orders') ?>">همه</a>
+      <?php if (auth_can_page('orders')): ?><a class="btn btn-sm" href="<?= url('orders') ?>">همه</a><?php endif; ?>
     </div>
     <div class="card-b tight">
       <?php if (!$openOrders): ?>
@@ -217,8 +217,11 @@ foreach ($alerts as [$k, $t, $m]) {
               }
           ?>
             <tr>
-              <td><a href="<?= url('order_view', ['id' => $o['id']]) ?>">
-                  <b class="mono"><?= e($o['order_no'] ?: '#' . $o['id']) ?></b></a></td>
+              <td>
+                <?php if (auth_can_page('order_view')): ?><a href="<?= url('order_view', ['id' => $o['id']]) ?>"><?php endif; ?>
+                  <b class="mono"><?= e($o['order_no'] ?: '#' . $o['id']) ?></b>
+                <?php if (auth_can_page('order_view')): ?></a><?php endif; ?>
+              </td>
               <td><?= e(str_limit($nm ?: '—', 22)) ?></td>
               <td class="num small"><?= jdate($o['order_date']) ?></td>
               <td class="num"><?= badge($o['status'], order_status_kind($o['status'])) ?></td>
@@ -235,7 +238,7 @@ foreach ($alerts as [$k, $t, $m]) {
   <div class="card mb0">
     <div class="card-h">
       <h2>بیشترین درخواست‌های ناموجود</h2>
-      <a class="btn btn-sm" href="<?= url('missed') ?>">همه</a>
+      <?php if (auth_can_page('missed')): ?><a class="btn btn-sm" href="<?= url('missed') ?>">همه</a><?php endif; ?>
     </div>
     <div class="card-b tight">
       <?php if (!$topMissed): ?>
@@ -268,7 +271,7 @@ foreach ($alerts as [$k, $t, $m]) {
 <div class="card mt16">
   <div class="card-h">
     <h2>پرفروش‌های ۹۰ روز اخیر</h2>
-    <a class="btn btn-sm" href="<?= url('decision') ?>">بررسی تصمیم انبار</a>
+    <?php if (auth_can_page('decision')): ?><a class="btn btn-sm" href="<?= url('decision') ?>">بررسی تصمیم انبار</a><?php endif; ?>
   </div>
   <div class="card-b tight">
     <?php if (!$topSellers): ?>
@@ -288,7 +291,7 @@ foreach ($alerts as [$k, $t, $m]) {
         ?>
           <tr>
             <td>
-              <a href="<?= url('product_edit', ['id' => $s['id']]) ?>"><b><?= e(str_limit($s['name'], 34)) ?></b></a>
+              <a href="<?= url(auth_can('write_product') ? 'product_edit' : 'products', auth_can('write_product') ? ['id' => $s['id']] : []) ?>"><b><?= e(str_limit($s['name'], 34)) ?></b></a>
               <?php if ($s['part_number']): ?>
                 <div class="tiny muted mono"><?= e($s['part_number']) ?></div>
               <?php endif; ?>

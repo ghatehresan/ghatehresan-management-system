@@ -4,6 +4,7 @@
 if (is_post()) {
     csrf_verify();
     if (post('action') === 'move') {
+        auth_require_permission('write_stock');
         $pid = post_int('product_id');
         $qty = post_int('qty');
         $kind = post('kind', 'ورود');
@@ -24,6 +25,7 @@ if (is_post()) {
         redirect(url('stock', array_filter(['pid' => get_int('pid', 0) ?: null])));
     }
     if (post('action') === 'delmove') {
+        auth_require_permission('delete_stock_move');
         $mv = one("SELECT * FROM stock_moves WHERE id=?", [post_int('id')]);
         if ($mv) {
             q("DELETE FROM stock_moves WHERE id=?", [$mv['id']]);
@@ -170,7 +172,7 @@ page_head('انبار و کاردکس',
           $val = (int)$r['stock_qty'] * (int)$r['buy_price'];
       ?>
         <tr>
-          <td><a href="<?= url('product_edit', ['id' => $r['id']]) ?>">
+          <td><a href="<?= url(auth_can('write_product') ? 'product_edit' : 'products', auth_can('write_product') ? ['id' => $r['id']] : []) ?>">
               <b><?= e(str_limit($r['name'], 34)) ?></b></a></td>
           <td class="small"><?= e($r['cat_name'] ?: '—') ?></td>
           <td class="num"><b class="<?= (int)$r['stock_qty'] < 0 ? 'neg' : '' ?>">
@@ -224,12 +226,14 @@ page_head('انبار و کاردکس',
             <td class="num"><?= (int)$m['unit_cost'] ? money($m['unit_cost']) : '—' ?></td>
             <td class="small"><?= e($m['ref'] ?: '—') ?></td>
             <td class="act">
-              <form method="post" style="display:inline">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="delmove">
-                <input type="hidden" name="id" value="<?= $m['id'] ?>">
-                <button class="btn btn-sm btn-d" data-confirm="این حرکت حذف شود؟">×</button>
-              </form>
+              <?php if (auth_can('delete_stock_move')): ?>
+                <form method="post" style="display:inline">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="delmove">
+                  <input type="hidden" name="id" value="<?= $m['id'] ?>">
+                  <button class="btn btn-sm btn-d" data-confirm="این حرکت حذف شود؟">×</button>
+                </form>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

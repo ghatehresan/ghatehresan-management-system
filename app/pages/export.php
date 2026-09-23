@@ -5,6 +5,10 @@ $t = get('t', 'products');
 
 $allowed = ['products', 'orders', 'order_items', 'customers', 'suppliers', 'missed', 'stock'];
 if (!in_array($t, $allowed, true)) $t = 'products';
+if (!auth_can_export($t)) {
+    flash('error', 'اجازهٔ دریافت این نوع خروجی را ندارید.');
+    redirect(url('dashboard'));
+}
 
 $rows = [];
 $head = [];

@@ -8,7 +8,7 @@ if (!auth_bootstrap_required()) {
 $errors = [];
 if (is_post()) {
     csrf_verify();
-    $username = trim((string)post('username'));
+    $username = strtolower(trim((string)post('username')));
     $name     = trim((string)post('name'));
     $password = (string)($_POST['password'] ?? '');
     $confirm  = (string)($_POST['password_confirm'] ?? '');

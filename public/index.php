@@ -53,7 +53,7 @@ if (PHP_VERSION_ID < 70400) {
 // مسیریابی
 $pages = ['dashboard','products','product_edit','orders','order_edit','order_view',
           'missed','stock','decision','suppliers','supplier_edit',
-          'customers','customer_edit','reports','settings','export',
+          'customers','customer_edit','reports','settings','users','export',
           'login','setup','logout'];
 
 $p = $_GET['p'] ?? 'dashboard';
@@ -67,6 +67,10 @@ if (!auth_bootstrap_required() && !is_authenticated() && !in_array($p, ['login']
     redirect(url('login'));
 }
 if (is_authenticated() && in_array($p, ['login', 'setup'], true)) {
+    redirect(url('dashboard'));
+}
+if (is_authenticated() && !auth_can_page($p)) {
+    flash('error', 'دسترسی شما به این بخش مجاز نیست.');
     redirect(url('dashboard'));
 }
 

@@ -3,6 +3,7 @@
 
 if (is_post() && post('action') === 'delete') {
     csrf_verify();
+    auth_require_permission('delete_customer');
     $id = post_int('id');
     q("UPDATE orders SET customer_id=NULL WHERE customer_id=?", [$id]);
     q("DELETE FROM customers WHERE id=?", [$id]);
@@ -121,12 +122,14 @@ page_head('مشتریان', fa_digits($total) . ' مشتری ثبت‌شده',
             <td class="num small"><?= $r['last_order'] ? jdate($r['last_order']) : '—' ?></td>
             <td class="act">
               <a class="btn btn-sm" href="<?= url('customer_edit', ['id' => $r['id']]) ?>">ویرایش</a>
-              <form method="post" style="display:inline">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                <button class="btn btn-sm btn-d" data-confirm="حذف شود؟">×</button>
-              </form>
+              <?php if (auth_can('delete_customer')): ?>
+                <form method="post" style="display:inline">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                  <button class="btn btn-sm btn-d" data-confirm="حذف شود؟">×</button>
+                </form>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

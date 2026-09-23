@@ -1,6 +1,7 @@
 <?php
 /** تنظیمات، پشتیبان‌گیری و دادهٔ نمونه */
 
+auth_require_permission('manage_settings');
 $msgExtra = '';
 
 if (is_post()) {
@@ -291,7 +292,7 @@ page_head('تنظیمات', 'پیکربندی، داده‌های پایه و پ
   <div class="card-h"><h2>دربارهٔ این سامانه</h2></div>
   <div class="card-b">
     <dl class="kv">
-      <dt>نسخه</dt><dd>۱٫۰</dd>
+      <dt>نسخه</dt><dd>۱٫۲</dd>
       <dt>نسخهٔ PHP</dt><dd class="mono" dir="ltr"><?= e(PHP_VERSION) ?></dd>
       <dt>محل داده</dt>
       <dd class="mono tiny" dir="ltr">

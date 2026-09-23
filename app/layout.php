@@ -17,6 +17,7 @@ function layout_head($pageTitle = '') {
         'suppliers' => ['تأمین‌کننده',    'M17 20h5v-2a3 3 0 00-5.4-1.8M9 20H4v-2a3 3 0 015.4-1.8M15 7a3 3 0 11-6 0 3 3 0 016 0z'],
         'customers' => ['مشتریان',        'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
         'reports'   => ['گزارش‌ها',       'M18 20V10M12 20V4M6 20v-6'],
+        'users'     => ['کاربران',         'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm7-1a3 3 0 100-6'],
         'settings'  => ['تنظیمات',        'M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 004.6 8a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 008 3.68V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 8v0c.14.31.4.56.72.7H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z'],
     ];
     ?>
@@ -48,6 +49,7 @@ function layout_head($pageTitle = '') {
 
   <nav>
     <?php foreach ($nav as $key => [$label, $icon]): ?>
+      <?php if (!auth_can_page($key)) continue; ?>
       <a href="<?= url($key) ?>" class="<?= $p === $key ? 'on' : '' ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="<?= $icon ?>"/></svg>
@@ -59,20 +61,21 @@ function layout_head($pageTitle = '') {
   <div class="side-ft">
     <?php
       $miss = (int)scalar("SELECT COUNT(*) FROM missed WHERE resolved=0");
-      if ($miss > 0):
+      if ($miss > 0 && auth_can_page('missed')):
     ?>
       <a class="alert-pill" href="<?= url('missed') ?>">
         <?= fa_digits($miss) ?> مورد در «نداشتیم»
       </a>
     <?php endif; ?>
     <?php $u = auth_user(); if ($u): ?>
-      <div class="ver" style="margin-bottom:7px;color:#c6d3e1"><?= e($u['name'] ?: $u['username']) ?></div>
+      <div class="ver" style="margin-bottom:2px;color:#c6d3e1"><?= e($u['name'] ?: $u['username']) ?></div>
+      <div class="ver" style="margin-bottom:7px;color:#8aa0b8"><?= e(role_label($u['role'])) ?></div>
       <form method="post" action="<?= url('logout') ?>" style="text-align:center;margin-bottom:8px">
         <?= csrf_field() ?>
         <button class="btn btn-sm" type="submit" style="background:transparent;color:#c6d3e1;border-color:rgba(255,255,255,.2);width:100%;justify-content:center">خروج از سامانه</button>
       </form>
     <?php endif; ?>
-    <div class="ver">نسخهٔ ۱٫۱</div>
+    <div class="ver">نسخهٔ ۱٫۲</div>
   </div>
 </aside>
 

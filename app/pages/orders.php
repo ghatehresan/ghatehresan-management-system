@@ -3,6 +3,7 @@
 
 if (is_post() && post('action') === 'delete') {
     csrf_verify();
+    auth_require_permission('delete_order');
     $id = post_int('id');
     $order = one("SELECT order_no FROM orders WHERE id=?", [$id]);
     $pdo = db();
@@ -21,6 +22,7 @@ if (is_post() && post('action') === 'delete') {
 }
 if (is_post() && post('action') === 'status') {
     csrf_verify();
+    auth_require_permission('change_order_status');
     $id = post_int('id');
     $status = post('status');
     if (!in_array($status, ['ثبت شد','خرید شد','ارسال شد','تحویل شد','لغو شد'], true)) {
@@ -176,22 +178,28 @@ page_head('سفارش‌ها', fa_digits($total) . ' سفارش',
               <?= money($pr['net']) ?></td>
             <td class="num small"><?= $pr['revenue'] > 0 ? pct($pr['margin']) : '—' ?></td>
             <td class="num">
-              <form method="post" style="display:inline">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="status">
-                <input type="hidden" name="id" value="<?= $o['id'] ?>">
-                <select name="status" data-autosubmit
-                        style="font-size:12px;padding:3px 7px;border-radius:7px;width:auto">
-                  <?php foreach (['ثبت شد','خرید شد','ارسال شد','تحویل شد','لغو شد'] as $s): ?>
-                    <option value="<?= e($s) ?>" <?= $o['status'] === $s ? 'selected' : '' ?>>
-                      <?= e($s) ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </form>
+              <?php if (auth_can('change_order_status')): ?>
+                <form method="post" style="display:inline">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="status">
+                  <input type="hidden" name="id" value="<?= $o['id'] ?>">
+                  <select name="status" data-autosubmit
+                          style="font-size:12px;padding:3px 7px;border-radius:7px;width:auto">
+                    <?php foreach (['ثبت شد','خرید شد','ارسال شد','تحویل شد','لغو شد'] as $s): ?>
+                      <option value="<?= e($s) ?>" <?= $o['status'] === $s ? 'selected' : '' ?>>
+                        <?= e($s) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </form>
+              <?php else: ?>
+                <?= badge($o['status'], order_status_kind($o['status'])) ?>
+              <?php endif; ?>
             </td>
             <td class="act">
               <a class="btn btn-sm" href="<?= url('order_view', ['id' => $o['id']]) ?>">مشاهده</a>
-              <a class="btn btn-sm" href="<?= url('order_edit', ['id' => $o['id']]) ?>">ویرایش</a>
+              <?php if (auth_can('write_order')): ?>
+                <a class="btn btn-sm" href="<?= url('order_edit', ['id' => $o['id']]) ?>">ویرایش</a>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

@@ -11,6 +11,7 @@ $previousOrderNo = $row['order_no'] ?? null;
 
 if (is_post()) {
     csrf_verify();
+    auth_require_permission('write_order');
 
     $od = jalali_str_to_ymd(post('order_date')) ?: date('Y-m-d');
     $data = [
