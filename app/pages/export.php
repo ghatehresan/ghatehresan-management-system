@@ -3,12 +3,13 @@
 
 $t = get('t', 'products');
 
-$allowed = ['products', 'orders', 'order_items', 'customers', 'suppliers', 'missed', 'stock'];
+$allowed = ['products', 'orders', 'order_items', 'customers', 'suppliers', 'missed', 'stock', 'activity'];
 if (!in_array($t, $allowed, true)) $t = 'products';
 if (!auth_can_export($t)) {
     flash('error', 'اجازهٔ دریافت این نوع خروجی را ندارید.');
     redirect(url('dashboard'));
 }
+activity_log('export_downloaded', 'export', null, 'type=' . $t);
 
 $rows = [];
 $head = [];
@@ -132,6 +133,23 @@ switch ($t) {
             $rows[] = [
                 jdate($m['move_date']), $m['pname'], $m['kind'], (int)$m['qty'],
                 (int)$m['unit_cost'] ?: '', $m['ref'], $m['notes'],
+            ];
+        }
+        break;
+
+    case 'activity':
+        $name = 'گزارش-فعالیت';
+        $head = ['زمان','کاربر','نام کاربری','رویداد','بخش','شناسه','جزئیات','IP'];
+        foreach (all("SELECT a.*, u.name AS user_name, u.username
+                        FROM activity_log a
+                        LEFT JOIN users u ON u.id=a.user_id
+                       ORDER BY a.created_at DESC, a.id DESC
+                       LIMIT 5000") as $a) {
+            $rows[] = [
+                jdate($a['created_at'], 'full'), $a['user_name'] ?: 'سیستم / ناشناس',
+                $a['username'], activity_action_label($a['action']),
+                activity_entity_label($a['entity_type']), $a['entity_id'] ?: '',
+                $a['details'], $a['ip_address'],
             ];
         }
         break;

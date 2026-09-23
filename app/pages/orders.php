@@ -13,6 +13,7 @@ if (is_post() && post('action') === 'delete') {
         q("DELETE FROM order_items WHERE order_id=?", [$id]);
         q("DELETE FROM orders WHERE id=?", [$id]);
         $pdo->commit();
+        activity_log('order_deleted', 'order', $id);
         flash('ok', 'سفارش حذف شد و موجودی اصلاح شد.');
     } catch (Throwable $ex) {
         if ($pdo->inTransaction()) $pdo->rollBack();
@@ -34,6 +35,7 @@ if (is_post() && post('action') === 'status') {
             q("UPDATE orders SET status=? WHERE id=?", [$status, $id]);
             sync_order_stock($id);
             $pdo->commit();
+            activity_log('order_status_changed', 'order', $id, 'status=' . $status);
             flash('ok', 'وضعیت سفارش تغییر کرد و موجودی همگام شد.');
         } catch (Throwable $ex) {
             if ($pdo->inTransaction()) $pdo->rollBack();

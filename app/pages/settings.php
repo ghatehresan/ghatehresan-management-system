@@ -19,6 +19,7 @@ if (is_post()) {
         set_setting('packaging_cost', (string)max(0, post_int('packaging_cost')));
         set_setting('stock_min_sales_90d', (string)max(1, post_int('stock_min_sales_90d')));
         set_setting('order_prefix', substr($prefix, 0, 12));
+        activity_log('settings_updated', 'settings');
         flash('ok', 'تنظیمات ذخیره شد.');
         redirect(url('settings'));
     }
@@ -26,6 +27,7 @@ if (is_post()) {
     if ($act === 'category_add' && post('name') !== '') {
         q("INSERT INTO categories (name, sort_order) VALUES (?, ?)",
           [post('name'), (int)scalar("SELECT COALESCE(MAX(sort_order),0)+1 FROM categories")]);
+        activity_log('settings_updated', 'settings', null, 'category_added=' . post('name'));
         flash('ok', 'دسته افزوده شد.');
         redirect(url('settings'));
     }
@@ -33,6 +35,7 @@ if (is_post()) {
         $cid = post_int('id');
         q("UPDATE products SET category_id=NULL WHERE category_id=?", [$cid]);
         q("DELETE FROM categories WHERE id=?", [$cid]);
+        activity_log('settings_updated', 'settings', $cid, 'category_deleted=1');
         flash('ok', 'دسته حذف شد.');
         redirect(url('settings'));
     }
@@ -40,6 +43,7 @@ if (is_post()) {
         q("INSERT INTO vehicles (name, maker, sort_order) VALUES (?, ?, ?)",
           [post('name'), post('maker'),
            (int)scalar("SELECT COALESCE(MAX(sort_order),0)+1 FROM vehicles")]);
+        activity_log('settings_updated', 'settings', null, 'vehicle_added=' . post('name'));
         flash('ok', 'خودرو افزوده شد.');
         redirect(url('settings'));
     }
@@ -47,6 +51,7 @@ if (is_post()) {
         $vid = post_int('id');
         q("DELETE FROM product_vehicles WHERE vehicle_id=?", [$vid]);
         q("DELETE FROM vehicles WHERE id=?", [$vid]);
+        activity_log('settings_updated', 'settings', $vid, 'vehicle_deleted=1');
         flash('ok', 'خودرو حذف شد.');
         redirect(url('settings'));
     }
@@ -54,6 +59,7 @@ if (is_post()) {
     if ($act === 'demo') {
         require_once APP_PATH . '/demo.php';
         $n = seed_demo_data();
+        activity_log('settings_updated', 'settings', null, 'demo_created=' . $n);
         flash('ok', 'دادهٔ نمونه ساخته شد: ' . fa_digits($n) . ' رکورد. '
                   . 'برای پاک کردن، از همین صفحه «حذف دادهٔ نمونه» را بزنید.');
         redirect(url('dashboard'));
@@ -64,6 +70,7 @@ if (is_post()) {
                   'products','customers','suppliers','missed'] as $tbl) {
             q("DELETE FROM $tbl");
         }
+        activity_log('demo_cleared', 'settings');
         flash('ok', 'همهٔ داده‌های عملیاتی پاک شد. دسته‌ها و خودروها باقی ماندند.');
         redirect(url('settings'));
     }
@@ -80,6 +87,7 @@ if (get('download') === 'backup' && DB_DRIVER === 'sqlite') {
         clearstatcache(true, $f);
         [$jy, $jm, $jd] = jtoday();
         $fn = sprintf('ghatehresan-backup-%04d-%02d-%02d.sqlite', $jy, $jm, $jd);
+        activity_log('backup_downloaded', 'backup', null, 'file=' . $fn);
         while (ob_get_level() > 0) ob_end_clean();
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="' . $fn . '"');
@@ -292,7 +300,7 @@ page_head('تنظیمات', 'پیکربندی، داده‌های پایه و پ
   <div class="card-h"><h2>دربارهٔ این سامانه</h2></div>
   <div class="card-b">
     <dl class="kv">
-      <dt>نسخه</dt><dd>۱٫۲</dd>
+      <dt>نسخه</dt><dd>۱٫۳</dd>
       <dt>نسخهٔ PHP</dt><dd class="mono" dir="ltr"><?= e(PHP_VERSION) ?></dd>
       <dt>محل داده</dt>
       <dd class="mono tiny" dir="ltr">

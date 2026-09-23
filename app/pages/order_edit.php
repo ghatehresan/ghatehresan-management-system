@@ -108,6 +108,8 @@ if (is_post()) {
             // هر بار وضعیت واقعی سفارش با کاردکس همگام می‌شود.
             sync_order_stock($oid, $id ? $previousOrderNo : null);
             $pdo->commit();
+            activity_log($id ? 'order_updated' : 'order_created', 'order', $oid,
+                'order_no=' . $data['order_no'] . ';status=' . $data['status']);
             flash('ok', $id ? 'سفارش به‌روزرسانی شد.' : 'سفارش ثبت شد.');
             redirect(url('order_view', ['id' => $oid]));
         } catch (Throwable $ex) {

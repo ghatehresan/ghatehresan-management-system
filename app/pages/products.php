@@ -10,6 +10,7 @@ if (is_post() && post('action') === 'delete') {
     q("UPDATE order_items SET product_id=NULL WHERE product_id=?", [$id]);
     q("DELETE FROM stock_moves WHERE product_id=?", [$id]);
     q("DELETE FROM products WHERE id=?", [$id]);
+    activity_log('product_deleted', 'product', $id);
     flash('ok', 'کالا حذف شد.');
     redirect(url('products'));
 }

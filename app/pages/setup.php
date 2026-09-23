@@ -28,6 +28,7 @@ if (is_post()) {
            VALUES (?,?,?,?,1)",
           [$username, password_hash($password, PASSWORD_DEFAULT), $name, 'admin']);
         $user = one("SELECT id, username, name, role, active FROM users WHERE username=?", [$username]);
+        activity_log('user_created', 'user', $user['id'], 'username=' . $username . ';role=admin', $user['id']);
         auth_login($user);
         redirect(url('dashboard'));
     }

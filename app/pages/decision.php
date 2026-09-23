@@ -5,7 +5,9 @@ if (is_post()) {
     csrf_verify();
     if (post('action') === 'threshold') {
         auth_require_permission('change_decision');
-        set_setting('stock_min_sales_90d', (string)max(1, post_int('min_sales')));
+        $min = max(1, post_int('min_sales'));
+        set_setting('stock_min_sales_90d', (string)$min);
+        activity_log('decision_changed', 'decision', null, 'min_sales_90d=' . $min);
         flash('ok', 'آستانه به‌روزرسانی شد.');
         redirect(url('decision'));
     }
@@ -14,6 +16,7 @@ if (is_post()) {
         // ثبت وضعیت ثبات قیمت / منسوخ بودن در یادداشت کالا
         $pid = post_int('id');
         q("UPDATE products SET notes = ? WHERE id = ?", [post('notes'), $pid]);
+        activity_log('decision_changed', 'product', $pid, 'flag_notes_updated=1');
         flash('ok', 'ذخیره شد.');
         redirect(url('decision'));
     }

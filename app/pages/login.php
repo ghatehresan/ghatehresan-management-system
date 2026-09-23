@@ -11,8 +11,10 @@ if (is_post()) {
     $user = one("SELECT id, username, name, role, active, password_hash
                    FROM users WHERE username=? AND active=1", [$username]);
     if (!$user || !password_verify($password, $user['password_hash'])) {
+        activity_log('login_failed', 'auth', null, 'username=' . $username);
         $errors[] = 'نام کاربری یا رمز عبور نادرست است.';
     } else {
+        activity_log('login', 'auth', $user['id'], 'username=' . $user['username'], $user['id']);
         auth_login($user);
         redirect(url('dashboard'));
     }

@@ -26,11 +26,14 @@ if (is_post()) {
         if ($id) {
             $set = implode(', ', array_map(fn($k) => "$k=?", array_keys($d)));
             q("UPDATE customers SET $set WHERE id=?", [...array_values($d), $id]);
+            activity_log('customer_updated', 'customer', $id, 'name=' . $d['name']);
             flash('ok', 'به‌روزرسانی شد.');
         } else {
             $cols = implode(', ', array_keys($d));
             $ph   = implode(',', array_fill(0, count($d), '?'));
             q("INSERT INTO customers ($cols) VALUES ($ph)", array_values($d));
+            $newId = (int)db()->lastInsertId();
+            activity_log('customer_created', 'customer', $newId, 'name=' . $d['name']);
             flash('ok', 'مشتری ثبت شد.');
         }
         redirect(url('customers'));

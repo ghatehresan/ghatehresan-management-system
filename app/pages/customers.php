@@ -7,6 +7,7 @@ if (is_post() && post('action') === 'delete') {
     $id = post_int('id');
     q("UPDATE orders SET customer_id=NULL WHERE customer_id=?", [$id]);
     q("DELETE FROM customers WHERE id=?", [$id]);
+    activity_log('customer_deleted', 'customer', $id);
     flash('ok', 'مشتری حذف شد.');
     redirect(url('customers'));
 }

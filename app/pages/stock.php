@@ -20,6 +20,8 @@ if (is_post()) {
             add_stock_move($pid, $signed, $kind,
                 jalali_str_to_ymd(post('move_date')) ?: date('Y-m-d'),
                 post_int('unit_cost'), post('ref'), post('notes'));
+            activity_log('stock_added', 'stock', $pid,
+                'qty=' . $signed . ';kind=' . $kind);
             flash('ok', 'حرکت انبار ثبت شد.');
         }
         redirect(url('stock', array_filter(['pid' => get_int('pid', 0) ?: null])));
@@ -31,6 +33,8 @@ if (is_post()) {
             q("DELETE FROM stock_moves WHERE id=?", [$mv['id']]);
             q("UPDATE products SET stock_qty=? WHERE id=?",
               [product_stock((int)$mv['product_id']), $mv['product_id']]);
+            activity_log('stock_deleted', 'stock', (int)$mv['product_id'],
+                'move_id=' . (int)$mv['id'] . ';qty=' . (int)$mv['qty']);
             flash('ok', 'حرکت حذف شد.');
         }
         redirect(url('stock', array_filter(['pid' => get_int('pid', 0) ?: null])));

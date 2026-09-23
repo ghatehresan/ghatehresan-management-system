@@ -257,6 +257,19 @@ function migrate(): void {
         created_at    $TXT DEFAULT $NOW
     ";
 
+    // ── گزارش فعالیت کاربران ───────────────────────────────────────
+    $tables['activity_log'] = "
+        id           $ID,
+        user_id      INTEGER NULL,
+        action       $TXT NOT NULL,
+        entity_type  $TXT NULL,
+        entity_id    INTEGER NULL,
+        details      $LONG NULL,
+        ip_address   $TXT NULL,
+        user_agent   $LONG NULL,
+        created_at   $TXT DEFAULT $NOW
+    ";
+
     foreach ($tables as $name => $cols) {
         $pdo->exec("CREATE TABLE IF NOT EXISTS `$name` ($cols)$SUF");
     }
@@ -278,6 +291,8 @@ function migrate(): void {
         'idx_missed_date'   => 'missed(req_date)',
         'idx_sm_prod'       => 'stock_moves(product_id)',
         'idx_sm_order'      => 'stock_moves(order_id)',
+        'idx_activity_user' => 'activity_log(user_id)',
+        'idx_activity_time' => 'activity_log(created_at)',
     ];
     foreach ($idx as $n => $def) {
         try { $pdo->exec("CREATE INDEX IF NOT EXISTS `$n` ON $def"); } catch (Throwable $e) {}

@@ -7,6 +7,7 @@ if (is_post() && post('action') === 'delete') {
     $id = post_int('id');
     q("UPDATE products SET supplier_id=NULL WHERE supplier_id=?", [$id]);
     q("DELETE FROM suppliers WHERE id=?", [$id]);
+    activity_log('supplier_deleted', 'supplier', $id);
     flash('ok', 'تأمین‌کننده حذف شد.');
     redirect(url('suppliers'));
 }

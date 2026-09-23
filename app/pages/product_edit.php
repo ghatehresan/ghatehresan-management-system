@@ -73,6 +73,8 @@ if (is_post()) {
             foreach (array_unique($vehIds) as $v) $st->execute([$pid, $v]);
         }
 
+        activity_log($id ? 'product_updated' : 'product_created', 'product', $pid,
+            'name=' . $data['name'] . ';status=' . $data['status']);
         redirect(post('stay') ? url('product_edit', ['id' => $pid]) : url('products'));
     }
 

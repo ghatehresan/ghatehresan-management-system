@@ -48,8 +48,9 @@ if (is_post()) {
         }
 
         if (!$errors) {
+            $passwordChanged = $password !== '';
             if ($uid) {
-                if ($password !== '') {
+                if ($passwordChanged) {
                     q("UPDATE users SET username=?, name=?, role=?, active=?, password_hash=? WHERE id=?",
                       [$username, $name, $role, $active,
                        password_hash($password, PASSWORD_DEFAULT), $uid]);
@@ -57,11 +58,17 @@ if (is_post()) {
                     q("UPDATE users SET username=?, name=?, role=?, active=? WHERE id=?",
                       [$username, $name, $role, $active, $uid]);
                 }
+                activity_log('user_updated', 'user', $uid,
+                    'username=' . $username . ';role=' . $role . ';active=' . $active
+                    . ';password_changed=' . ($passwordChanged ? '1' : '0'));
                 flash('ok', 'اطلاعات کاربر به‌روزرسانی شد.');
             } else {
                 q("INSERT INTO users (username, password_hash, name, role, active)
                    VALUES (?,?,?,?,?)",
                   [$username, password_hash($password, PASSWORD_DEFAULT), $name, $role, $active]);
+                $newId = (int)db()->lastInsertId();
+                activity_log('user_created', 'user', $newId,
+                    'username=' . $username . ';role=' . $role . ';active=' . $active);
                 flash('ok', 'کاربر جدید ساخته شد.');
             }
             redirect(url('users'));
@@ -81,7 +88,10 @@ if (is_post()) {
         } elseif ($target['role'] === 'admin' && $target['active'] && active_admin_count() <= 1) {
             flash('error', 'حداقل یک مدیر کل فعال باید باقی بماند.');
         } else {
-            q("UPDATE users SET active=? WHERE id=?", [$target['active'] ? 0 : 1, $uid]);
+            $newActive = $target['active'] ? 0 : 1;
+            q("UPDATE users SET active=? WHERE id=?", [$newActive, $uid]);
+            activity_log($newActive ? 'user_activated' : 'user_deactivated', 'user', $uid,
+                'username=' . $target['username']);
             flash('ok', $target['active'] ? 'کاربر غیرفعال شد.' : 'کاربر فعال شد.');
         }
         redirect(url('users'));
@@ -193,7 +203,7 @@ foreach ($errors as $er) echo '<div class="flash f-red">' . e($er) . '</div>';
   <div class="card-h"><h2>سطح دسترسی نقش‌ها</h2></div>
   <div class="card-b">
     <dl class="kv">
-      <dt><?= e(role_label('admin')) ?></dt><dd>همهٔ بخش‌ها، تنظیمات، پشتیبان‌گیری، حذف و مدیریت کاربران</dd>
+      <dt><?= e(role_label('admin')) ?></dt><dd>همهٔ بخش‌ها، تنظیمات، پشتیبان‌گیری، حذف، گزارش فعالیت و مدیریت کاربران</dd>
       <dt><?= e(role_label('manager')) ?></dt><dd>مدیریت کامل عملیات، بدون مدیریت کاربران و تنظیمات امنیتی</dd>
       <dt><?= e(role_label('sales')) ?></dt><dd>کالا، سفارش، مشتری، تأمین‌کننده، دفتر نداشتیم و گزارش فروش</dd>
       <dt><?= e(role_label('warehouse')) ?></dt><dd>مشاهدهٔ کالا، انبار، کاردکس، تصمیم انبار و تأمین‌کنندگان</dd>

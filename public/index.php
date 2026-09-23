@@ -53,7 +53,7 @@ if (PHP_VERSION_ID < 70400) {
 // مسیریابی
 $pages = ['dashboard','products','product_edit','orders','order_edit','order_view',
           'missed','stock','decision','suppliers','supplier_edit',
-          'customers','customer_edit','reports','settings','users','export',
+          'customers','customer_edit','reports','settings','users','activity','account','export',
           'login','setup','logout'];
 
 $p = $_GET['p'] ?? 'dashboard';

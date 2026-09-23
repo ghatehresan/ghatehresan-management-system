@@ -40,11 +40,14 @@ if (is_post()) {
         if ($id) {
             $set = implode(', ', array_map(fn($k) => "$k=?", array_keys($d)));
             q("UPDATE suppliers SET $set WHERE id=?", [...array_values($d), $id]);
+            activity_log('supplier_updated', 'supplier', $id, 'name=' . $d['name']);
             flash('ok', 'اطلاعات به‌روزرسانی شد.');
         } else {
             $cols = implode(', ', array_keys($d));
             $ph   = implode(',', array_fill(0, count($d), '?'));
             q("INSERT INTO suppliers ($cols) VALUES ($ph)", array_values($d));
+            $newId = (int)db()->lastInsertId();
+            activity_log('supplier_created', 'supplier', $newId, 'name=' . $d['name']);
             flash('ok', 'تأمین‌کننده ثبت شد.');
         }
         redirect(url('suppliers'));

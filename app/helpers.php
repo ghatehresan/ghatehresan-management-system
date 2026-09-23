@@ -232,6 +232,8 @@ function auth_can_page(string $page): bool {
         'customer_edit'=> ['manager','sales'],
         'reports'      => ['manager','sales'],
         'export'       => ['manager','sales','warehouse'],
+        'account'      => ['manager','sales','warehouse'],
+        'activity'     => [],
         'settings'     => [],
         'users'        => [],
         'logout'       => ['manager','sales','warehouse'],
@@ -287,6 +289,83 @@ function auth_can_export(string $type): bool {
         return in_array(auth_role(), ['manager','warehouse'], true);
     }
     return false;
+}
+
+/** ثبت رویداد امنیتی/عملیاتی؛ خراب شدن لاگ نباید عملیات اصلی را متوقف کند. */
+function activity_log(string $action, $entityType = null, $entityId = null,
+                     $details = null, $userId = null): void {
+    if ($userId === null) {
+        $u = auth_user();
+        $userId = $u ? (int)$u['id'] : null;
+    }
+    try {
+        q("INSERT INTO activity_log
+             (user_id, action, entity_type, entity_id, details, ip_address, user_agent)
+           VALUES (?,?,?,?,?,?,?)", [
+            $userId ?: null,
+            $action,
+            $entityType ?: null,
+            $entityId ? (int)$entityId : null,
+            $details !== null ? (string)$details : null,
+            substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 255) ?: null,
+            substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 1000) ?: null,
+        ]);
+    } catch (Throwable $ex) {
+        error_log('[Ghatehresan activity] ' . $ex->getMessage());
+    }
+}
+
+function activity_action_label(string $action): string {
+    return [
+        'login'              => 'ورود موفق',
+        'login_failed'       => 'ورود ناموفق',
+        'logout'             => 'خروج',
+        'password_changed'   => 'تغییر رمز عبور',
+        'user_created'       => 'ساخت کاربر',
+        'user_updated'       => 'ویرایش کاربر',
+        'user_activated'     => 'فعال‌سازی کاربر',
+        'user_deactivated'   => 'غیرفعال‌سازی کاربر',
+        'product_created'    => 'ثبت کالا',
+        'product_updated'    => 'ویرایش کالا',
+        'product_deleted'    => 'حذف کالا',
+        'order_created'      => 'ثبت سفارش',
+        'order_updated'      => 'ویرایش سفارش',
+        'order_status_changed'=> 'تغییر وضعیت سفارش',
+        'order_deleted'      => 'حذف سفارش',
+        'customer_created'   => 'ثبت مشتری',
+        'customer_updated'   => 'ویرایش مشتری',
+        'customer_deleted'   => 'حذف مشتری',
+        'supplier_created'   => 'ثبت تأمین‌کننده',
+        'supplier_updated'   => 'ویرایش تأمین‌کننده',
+        'supplier_deleted'   => 'حذف تأمین‌کننده',
+        'missed_created'     => 'ثبت دفتر نداشتیم',
+        'missed_resolved'    => 'رسیدگی به دفتر نداشتیم',
+        'missed_deleted'     => 'حذف دفتر نداشتیم',
+        'stock_added'        => 'ثبت حرکت انبار',
+        'stock_deleted'      => 'حذف حرکت انبار',
+        'decision_changed'   => 'تغییر تصمیم انبار',
+        'export_downloaded'  => 'دریافت خروجی',
+        'settings_updated'   => 'تغییر تنظیمات',
+        'backup_downloaded'  => 'دریافت پشتیبان',
+        'demo_cleared'       => 'حذف دادهٔ نمونه',
+    ][$action] ?? $action;
+}
+
+function activity_entity_label($type): string {
+    return [
+        'auth'       => 'احراز هویت',
+        'user'       => 'کاربر',
+        'product'    => 'کالا',
+        'order'      => 'سفارش',
+        'customer'   => 'مشتری',
+        'supplier'   => 'تأمین‌کننده',
+        'missed'     => 'دفتر نداشتیم',
+        'stock'      => 'انبار',
+        'decision'   => 'تصمیم انبار',
+        'export'     => 'خروجی',
+        'settings'   => 'تنظیمات',
+        'backup'     => 'پشتیبان',
+    ][$type] ?? ($type ?: '—');
 }
 
 function csrf_token() {

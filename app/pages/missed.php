@@ -17,18 +17,24 @@ if (is_post()) {
               [$d, post('part_name'), post('vehicle'), post('year_engine'),
                post('source'), post_int('quoted_price'), post('followed_up') ? 1 : 0,
                post('notes')]);
+            $newId = (int)db()->lastInsertId();
+            activity_log('missed_created', 'missed', $newId, 'part=' . post('part_name'));
             flash('ok', 'ثبت شد. این داده بعداً می‌گوید انبار را با چه چیزی پر کنید.');
         }
         redirect(url('missed'));
     }
     if ($act === 'resolve') {
         auth_require_permission('write_missed');
-        q("UPDATE missed SET resolved = 1 - resolved WHERE id=?", [post_int('id')]);
+        $mid = post_int('id');
+        q("UPDATE missed SET resolved = 1 - resolved WHERE id=?", [$mid]);
+        activity_log('missed_resolved', 'missed', $mid);
         redirect(url('missed', array_filter(['f' => get('f')])));
     }
     if ($act === 'delete') {
         auth_require_permission('delete_missed');
-        q("DELETE FROM missed WHERE id=?", [post_int('id')]);
+        $mid = post_int('id');
+        q("DELETE FROM missed WHERE id=?", [$mid]);
+        activity_log('missed_deleted', 'missed', $mid);
         flash('ok', 'حذف شد.');
         redirect(url('missed'));
     }
