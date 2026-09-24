@@ -8,6 +8,32 @@ if (is_post()) {
     csrf_verify();
     $act = post('action');
 
+    if ($act === 'api_generate') {
+        $apiKey = 'gr_' . bin2hex(random_bytes(12));
+        $apiSecret = bin2hex(random_bytes(32));
+        set_setting('api_enabled', '1');
+        set_setting('api_key', $apiKey);
+        set_setting('api_secret', $apiSecret);
+        activity_log('settings_updated', 'settings', null, 'api_credentials_generated=1');
+        flash('ok', 'کلید اتصال ساخته شد. آن را در پلاگین وردپرس وارد کنید.');
+        redirect(url('settings'));
+    }
+
+    if ($act === 'api_save') {
+        $apiKey = preg_replace('/[^A-Za-z0-9_.-]/', '', post('api_key'));
+        $apiSecret = trim((string)post('api_secret'));
+        if (post('api_enabled') && ($apiKey === '' || strlen($apiSecret) < 32)) {
+            flash('error', 'برای فعال‌سازی اتصال، کلید و رمز API معتبر لازم است.');
+        } else {
+            set_setting('api_enabled', post('api_enabled') ? '1' : '0');
+            set_setting('api_key', $apiKey);
+            set_setting('api_secret', $apiSecret);
+            activity_log('settings_updated', 'settings', null, 'api_config_updated=1');
+            flash('ok', 'تنظیمات اتصال سایت ذخیره شد.');
+        }
+        redirect(url('settings'));
+    }
+
     if ($act === 'save') {
         $fee = (float)str_replace(',', '.', en_digits(post('gateway_fee_percent')));
         $fee = max(0, min(100, $fee));
@@ -160,6 +186,43 @@ page_head('تنظیمات', 'پیکربندی، داده‌های پایه و پ
   </div>
 </form>
 
+<div class="card">
+  <div class="card-h"><h2>اتصال وب‌سایت وردپرسی</h2><span class="sub">API امن برای ووکامرس</span></div>
+  <div class="card-b">
+    <div class="note n-info" style="margin-top:0">
+      <b>مرجع موجودی و قیمت: این سامانه</b>
+      پلاگین وردپرس کالا و موجودی را از اینجا می‌خواند و سفارش‌های سایت را به این سامانه ارسال می‌کند.
+      آدرس API برای وارد کردن در پلاگین: <code dir="ltr">public/api.php</code>
+      <br>اتصال را فقط روی HTTPS فعال کنید و کلیدها را با کسی به اشتراک نگذارید.
+    </div>
+    <form method="post" class="frm">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="api_save">
+      <div class="row r3">
+        <div class="fld">
+          <label>کلید API</label>
+          <input type="text" name="api_key" value="<?= e(setting('api_key', '')) ?>" class="mono" dir="ltr" autocomplete="off">
+        </div>
+        <div class="fld">
+          <label>رمز API</label>
+          <input type="text" name="api_secret" value="<?= e(setting('api_secret', '')) ?>" class="mono" dir="ltr" autocomplete="off">
+        </div>
+        <div class="fld" style="display:flex;align-items:flex-end">
+          <label class="chk"><input type="checkbox" name="api_enabled" value="1" <?= setting('api_enabled', '0') === '1' ? 'checked' : '' ?>> اتصال فعال است</label>
+        </div>
+      </div>
+      <div class="frm-ft">
+        <button class="btn btn-p">ذخیرهٔ اتصال</button>
+      </div>
+    </form>
+    <form method="post" style="margin-top:10px">
+      <?= csrf_field() ?>
+      <input type="hidden" name="action" value="api_generate">
+      <button class="btn btn-sm btn-n" data-confirm="کلیدهای فعلی از کار می‌افتند. کلید جدید ساخته شود؟">ساخت کلیدهای جدید</button>
+    </form>
+  </div>
+</div>
+
 <div class="stats g2">
   <div class="card mb0">
     <div class="card-h"><h2>دسته‌های کالا</h2><span class="sub"><?= fa_digits(count($cats)) ?> دسته</span></div>
@@ -300,7 +363,7 @@ page_head('تنظیمات', 'پیکربندی، داده‌های پایه و پ
   <div class="card-h"><h2>دربارهٔ این سامانه</h2></div>
   <div class="card-b">
     <dl class="kv">
-      <dt>نسخه</dt><dd>۱٫۳</dd>
+      <dt>نسخه</dt><dd>۱٫۴</dd>
       <dt>نسخهٔ PHP</dt><dd class="mono" dir="ltr"><?= e(PHP_VERSION) ?></dd>
       <dt>محل داده</dt>
       <dd class="mono tiny" dir="ltr">

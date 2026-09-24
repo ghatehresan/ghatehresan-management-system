@@ -194,10 +194,13 @@ function migrate(): void {
         gateway_fee    $INT DEFAULT 0,
         shipping_cost  $INT DEFAULT 0,
         packaging_cost $INT DEFAULT 0,
-        is_returned    INTEGER DEFAULT 0,
-        return_reason  $LONG NULL,
-        notes          $LONG NULL,
-        created_at     $TXT DEFAULT $NOW
+        is_returned      INTEGER DEFAULT 0,
+        return_reason    $LONG NULL,
+        notes            $LONG NULL,
+        external_source  $TXT NULL,
+        external_order_id $TXT NULL,
+        updated_at       $TXT NULL,
+        created_at       $TXT DEFAULT $NOW
     ";
 
     // ── اقلام سفارش ────────────────────────────────────────────────
@@ -310,6 +313,11 @@ function migrate(): void {
         'vehicles'  => ['maker'   => "$TXT NULL"],
         'products'    => ['quality' => "$TXT NULL"],
         'stock_moves' => ['order_id' => "INTEGER NULL"],
+        'orders'      => [
+            'external_source'   => "$TXT NULL",
+            'external_order_id' => "$TXT NULL",
+            'updated_at'        => "$TXT NULL",
+        ],
     ];
     foreach ($patch as $tbl => $cols) {
         $have = table_columns($tbl);
@@ -319,6 +327,11 @@ function migrate(): void {
             try { $pdo->exec("ALTER TABLE `$tbl` ADD COLUMN `$col` $def"); } catch (Throwable $e) {}
         }
     }
+    try {
+        $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS `idx_orders_external`
+                    ON `orders` (`external_source`, `external_order_id`)");
+    } catch (Throwable $e) {}
+
     // انتقال دادهٔ ستون قدیمی type به ctype (اگر وجود داشته باشد)
     $cc = table_columns('customers');
     if (in_array('type', $cc, true) && in_array('ctype', $cc, true)) {
@@ -458,8 +471,8 @@ function add_stock_move(int $productId, int $qty, string $kind, $date = null,
            VALUES (?,?,?,?,?,?,?,?)",
           [$productId, $orderId, $date ?: date('Y-m-d'), $qty, $kind,
            $unitCost, $ref, $notes]);
-        q("UPDATE products SET stock_qty = ? WHERE id = ?",
-          [product_stock($productId), $productId]);
+        q("UPDATE products SET stock_qty = ?, updated_at=? WHERE id = ?",
+          [product_stock($productId), date('Y-m-d H:i:s'), $productId]);
         if ($local) $pdo->commit();
     } catch (Throwable $e) {
         if ($local && $pdo->inTransaction()) $pdo->rollBack();

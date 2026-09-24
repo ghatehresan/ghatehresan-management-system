@@ -77,7 +77,7 @@ function layout_head($pageTitle = '') {
         <button class="btn btn-sm" type="submit" style="background:transparent;color:#c6d3e1;border-color:rgba(255,255,255,.2);width:100%;justify-content:center">خروج از سامانه</button>
       </form>
     <?php endif; ?>
-    <div class="ver">نسخهٔ ۱٫۳</div>
+    <div class="ver">نسخهٔ ۱٫۴</div>
   </div>
 </aside>
 

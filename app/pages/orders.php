@@ -32,7 +32,8 @@ if (is_post() && post('action') === 'status') {
         $pdo = db();
         try {
             $pdo->beginTransaction();
-            q("UPDATE orders SET status=? WHERE id=?", [$status, $id]);
+            q("UPDATE orders SET status=?, updated_at=? WHERE id=?",
+              [$status, date('Y-m-d H:i:s'), $id]);
             sync_order_stock($id);
             $pdo->commit();
             activity_log('order_status_changed', 'order', $id, 'status=' . $status);

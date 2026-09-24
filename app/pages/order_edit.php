@@ -79,8 +79,8 @@ if (is_post()) {
             if ($id) {
                 q("UPDATE orders SET order_no=?, order_date=?, customer_id=?, customer_name=?,
                       city=?, status=?, gateway_fee=?, shipping_cost=?, packaging_cost=?,
-                      is_returned=?, return_reason=?, notes=? WHERE id=?",
-                  [...array_values($data), $id]);
+                      is_returned=?, return_reason=?, notes=?, updated_at=? WHERE id=?",
+                  [...array_values($data), date('Y-m-d H:i:s'), $id]);
                 $oid = $id;
                 q("DELETE FROM order_items WHERE order_id=?", [$oid]);
             } else {
@@ -92,8 +92,8 @@ if (is_post()) {
                 }
                 q("INSERT INTO orders (order_no, order_date, customer_id, customer_name, city,
                        status, gateway_fee, shipping_cost, packaging_cost, is_returned,
-                       return_reason, notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                  array_values($data));
+                       return_reason, notes, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                  [...array_values($data), date('Y-m-d H:i:s')]);
                 $oid = (int)db()->lastInsertId();
             }
 
